@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<policy xmlns="http://www.mulesoft.org/schema/mule/policy"
+	policyName="Regex Validator" xmlns:mule="http://www.mulesoft.org/schema/mule/core"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:api-platform-gw="http://www.mulesoft.org/schema/mule/api-platform-gw"
+	xsi:schemaLocation="http://www.mulesoft.org/schema/mule/policy http://www.mulesoft.org/schema/mule/policy/current/mule-policy.xsd http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd http://www.mulesoft.org/schema/mule/api-platform-gw http://www.mulesoft.org/schema/mule/api-platform-gw/current/mule-api-platform-gw.xsd">
+
+	<!-- Set response in case of Policy Violation -->
+	<mule:processor-chain xmlns:mule="http://www.mulesoft.org/schema/mule/core"
+		name="YouShallNotPass">
+		<!-- Set the HTTP status code to 403: -->
+		<mule:set-property propertyName="http.status" value="403" />
+		<mule:set-payload value="Access Denied!" />
+	</mule:processor-chain>
+
+	<mule:expression-filter xmlns:mule="http://www.mulesoft.org/schema/mule/core"
+		expression="#[Integer.parseInt({{maxSize}}) >= Integer.parseInt(message.inboundProperties.'Content-Length')]"
+		name="Expression" />
+
+	<before>
+		<mule:logger
+			message="#[Integer.parseInt(message.inboundProperties.'Content-Length')]"
+			level="INFO" />
+		<mule:message-filter xmlns:mule="http://www.mulesoft.org/schema/mule/core"
+			onUnaccepted="YouShallNotPass">
+			<mule:filter ref="Expression" />
+		</mule:message-filter>
+	</before>
+
+
+	<!-- Required by Mule -->
+	<pointcut>
+		<api-platform-gw:api-pointcut apiName="{{ apiName }}"
+			apiVersion="{{ apiVersionName }}" />
+	</pointcut>
+
+
+</policy>
